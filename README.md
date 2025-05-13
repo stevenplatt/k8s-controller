@@ -33,11 +33,6 @@ The following tools must be installed on your host machine to run the repository
 - `Docker`: For building and running containers
 - `Homebrew`: For installing required tools (MacOS)
 
-As part of the repository automations, these additional tools are later installed during local deployment:
-
-- `kubectl`: For interacting with the Kubernetes cluster
-- `kind`: For creating a local Kubernetes cluster
-
 ## Repository Structure
 
 ```bash
@@ -69,11 +64,12 @@ make deploy
 
 This command:
 
-1. Creates a Kind cluster with the configuration from `_kind-config.yaml`
-2. Deploys the Custom Resource Definition
-3. Builds and deploys the controller
-4. Deploys an example NGINX application
-5. Creates a NodeRefresh resource that targets nodes with the `llm-plan: free` label
+1. Installs `kubectl` and `kind` to the local machine
+2. Creates a Kind cluster with the configuration from `_kind-config.yaml`
+3. Deploys the Custom Resource Definition
+4. Builds and deploys the controller
+5. Deploys an example NGINX application
+6. Creates a NodeRefresh resource that targets nodes with the `llm-plan: free` label
 
 ### Teardown
 
