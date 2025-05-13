@@ -22,7 +22,7 @@ The Node Refresh Controller is designed to safely drain and refresh nodes that m
 - **Healthchecks**: Healthchecks and disruption budgets are used in conjunction and inherited from the application deployment, rather than configured in the controller itself
 - **Cordon instead of delete**: The controller logic currently cordons nodes before draining them and then un-cordons them. This is to simulate removing and adding nodes, without conflicting with how the Kind cluster manages docker containers underneath. Additional commands to delete nodes can be added in a production scenario.
 - **Helm compatible**: For simplicity, the controller and example application deployment do not use Helm packages. The controller container build however, contains an example of passing ENV vars, which could be used with Helm to customize the controller at deployment (`ENV CONTROLLER_NAMESPACE=default` is the example passed in the `Dockerfile` and later inherited in `controller.py`). An arbitrary number of parameters can be added this way and managed through Helm packaging.
-- **Additional tests**: In production use, additional linting and testing can be applied to `controller.py` and the API calls that it makes. They have been omitted here for timeliness.
+- **Additional tests**: In production use, additional linting and testing can be applied to `controller.py` and the API calls that it makes. They have been omitted here in favor of safety-checking `try` patterns for timeliness.
 
 ## Prerequisites
 
