@@ -1,0 +1,84 @@
+# --- Service Account ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: node-refresh-operator-sa
+  namespace: kube-system
+---
+# --- Cluster Role (Permissions) ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-refresh-operator-role
+rules:
+  # Permissions for the CRD itself
+  - apiGroups: ["stable.example.com"]
+    resources: ["noderefreshes", "noderefreshes/status"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+  # Permissions to view and modify nodes (cordon/uncordon)
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+  # Permissions to view pods (for draining checks)
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  # Permissions to evict pods (respects PDBs)
+  - apiGroups: ["policy", ""]
+    resources: ["pods/eviction"]
+    verbs: ["create"]
+  # Permissions for kopf to manage its state
+  - apiGroups: ["kopf.dev"]
+    resources: ["clusterkopfpeerings", "kopfpeerings"]
+    verbs: ["list", "watch", "patch", "get", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["events", "patch"]
+    verbs: ["create"] # To create events
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "watch"] # These are needed for kopf to monitor the NodeRefresh CRD itself
+---
+# --- Cluster Role Binding ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: node-refresh-operator-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: node-refresh-operator-role
+subjects:
+  - kind: ServiceAccount
+    name: node-refresh-operator-sa
+    namespace: kube-system # Matches the ServiceAccount namespace
+---
+# --- Deployment ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-refresh-operator
+  namespace: kube-system # Matches the ServiceAccount namespace
+  labels:
+    app: node-refresh-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-refresh-operator
+  template:
+    metadata:
+      labels:
+        app: node-refresh-operator
+    spec:
+      serviceAccountName: node-refresh-operator-sa
+      containers:
+        - name: operator
+          image: node-refresh-operator:latest
+          imagePullPolicy: Never # relies on loading docker image locally for testing
+          env:
+            - name: CONTROLLER_NAMESPACE # tells the controller which namespace it has been deployed to
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+      nodeSelector:
+        llm-plan: reserved # Assign controller to reserved node instance

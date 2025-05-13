@@ -1,0 +1,86 @@
+# noderefresh-crd.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: noderefreshes.stable.example.com # Name of the CRD
+spec:
+  group: stable.example.com # API group name
+  versions:
+    - name: v1alpha1 # API version
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                targetNodeLabels: # Labels to identify nodes to refresh
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: "Labels used to select the nodes that should be refreshed."
+                refreshScheduleDays: # How often to refresh nodes
+                  type: integer
+                  minimum: 1
+                  default: 3 # Default to every 3 days
+                  description: "The desired frequency in days for refreshing nodes (default: 3)."
+                nodeCooldownSeconds: # Time to wait after uncordoning before next node
+                  type: integer
+                  minimum: 0
+                  default: 300 # Default to 5 minutes
+                  description: "Seconds to wait after successfully refreshing a node before starting the next (default: 300)."
+              required:
+                - targetNodeLabels # Node labels are mandatory
+            status: # Status fields updated by the operator
+              type: object
+              properties:
+                lastRefreshTimestamp:
+                  type: string
+                  format: date-time
+                  description: "Timestamp of the last successful node refresh cycle completion for this spec."
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        description: "Type of condition (e.g., Processing, NodeDrained, Succeeded, Failed)."
+                      status:
+                        type: string
+                        enum: ["True", "False", "Unknown"]
+                        description: "Status of the condition."
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+                        description: "Timestamp of the last transition."
+                      reason:
+                        type: string
+                        description: "Reason for the condition's last transition."
+                      message:
+                        type: string
+                        description: "Message indicating details about last transition."
+                currentNode:
+                  type: string
+                  description: "The node currently being processed."
+                phase:
+                  type: string
+                  enum:
+                    [
+                      "Idle",
+                      "FindingNodes",
+                      "ProcessingNode",
+                      "WaitingCooldown",
+                      "Succeeded",
+                      "Failed",
+                    ]
+                  description: "Current phase of the refresh operation."
+  scope: Cluster # This operator works at the cluster level
+  names:
+    plural: noderefreshes
+    singular: noderefresh
+    kind: NodeRefresh # Kind used in Kubernetes manifests
+    shortNames:
+      - nr

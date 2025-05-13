@@ -1,0 +1,10 @@
+apiVersion: stable.example.com/v1alpha1
+kind: NodeRefresh
+metadata:
+  name: refresh-worker-nodes
+spec:
+  targetNodeLabels:
+    llm-plan: "free" # Target nodes with this specific label
+    # cloud.google.com/gke-nodepool: free # GCloud example
+  refreshScheduleDays: 3 # Refresh matching nodes every 3 days
+  nodeCooldownSeconds: 60 # Wait 1 minute after refreshing a node before starting the next
